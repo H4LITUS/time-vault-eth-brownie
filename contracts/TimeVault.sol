@@ -14,6 +14,18 @@ contract TimeVault {
 
     IERC20 public token;
 
+    event FundsDeposited(address indexed depositor, uint256 amount);
+    event FundsWithdrawn(
+        address indexed caller,
+        address indexed beneficiary,
+        uint256 amount
+    );
+    event TokensWithdrawn(
+        address indexed caller,
+        address indexed beneficiary,
+        uint256 amount
+    );
+
     modifier isUnlocked() {
         require(
             unlocked(),
@@ -46,6 +58,7 @@ contract TimeVault {
     function deposit() public payable {
         require(msg.value > 0);
         funds = funds + msg.value;
+        emit FundsDeposited(msg.sender, msg.value);
     }
 
     function withdrawFunds() public isUnlocked returns (bool) {
@@ -53,12 +66,14 @@ contract TimeVault {
         uint256 amount = funds;
         funds = 0;
         (bool sent, ) = beneficiary.call{value: amount}("");
+        emit FundsWithdrawn(msg.sender, beneficiary, amount);
         return sent;
     }
 
     function withdrawTokens() public isUnlocked returns (bool) {
         uint256 amount = token.balanceOf(address(this));
         bool sent = token.transfer(beneficiary, amount);
+        emit TokensWithdrawn(msg.sender, beneficiary, amount);
         return sent;
     }
 
